@@ -1,0 +1,4 @@
+[flake]
+; Minimal configuration for Flake to work with Black.
+max-line-length = 88
+extend-ignore = E203, E501
