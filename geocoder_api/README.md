@@ -1,54 +1,54 @@
-# API de Geocodificación
+# API de Geocodificación (FastAPI)
 
-## Descripción
-Esta API de geocodificación proporciona un servicio para convertir direcciones en coordenadas geográficas (latitud y longitud). Basada en FastAPI y SQLite, permite a los usuarios consultar direcciones almacenadas en una base de datos y recibir sus coordenadas correspondientes.
+Servicio ligero para geocodificar direcciones (ejemplo Colombia) usando una BD SQLite precargada con un dataset semilla. Incluye Docker, OpenAPI y tests básicos.
 
-## Instalación
-
-### Requisitos Previos
-- Python 3.8 o superior
-- pip (gestor de paquetes de Python)
-
-### Configuración del Entorno
-Se recomienda usar un entorno virtual para instalar las dependencias. Para crear y activar un entorno virtual, ejecute:
-
+## Levantar en 1 comando (Docker)
 ```bash
-python -m venv venv
-source venv/bin/activate  # En Windows use `venv\Scripts\activate`
+docker compose up --build
 ```
+- API: http://localhost:8000
+- Docs: http://localhost:8000/docs
 
-### Instalación de Dependencias
-Este proyecto utiliza Poetry para la gestión de dependencias. Instale Poetry y luego las dependencias del proyecto:
-
+## Levantar local (sin Docker)
 ```bash
-pip install poetry
-poetry install
+cd geocoder_api
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt
+python geocoder_api/crear_db.py   # prepara la BD con el CSV semilla
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-### Configuración de la Base de Datos
-Antes de ejecutar la API, es necesario crear y poblar la base de datos SQLite. Ejecute el siguiente script para hacerlo:
+Variables de entorno:
+- `DB_PATH` (opcional): ruta al SQLite que quieras usar. Por defecto `geocoder_api/data/geocoding.db`.
 
+## Ejemplos de uso
+### cURL
 ```bash
-python geocoder_api/crear_db.py
+curl "http://localhost:8000/geocode?direccion=KM%207%20AUTOPISTA%20FLORIDABLANCA"
+```
+Respuesta:
+```json
+{
+  "direccion": "KM 7 AUTOPISTA FLORIDABLANCA",
+  "latitud": 7.08524,
+  "longitud": -73.10344
+}
 ```
 
-Asegúrese de tener el archivo CSV con los datos de geocodificación en la ruta correcta.
+### OpenAPI interactivo
+1. Abre http://localhost:8000/docs
+2. El endpoint `GET /geocode` acepta el query param `direccion`.
+3. Respuestas esperadas:
+   - `200`: payload con `direccion`, `latitud`, `longitud`.
+   - `404`: `{"detail": "Direccion no encontrada"}`.
 
-### Ejecución de la API
-
-Para iniciar el servidor de la API, ejecute:
-
-```
-poetry run uvicorn main:app --reload
-```
-
-La API estará disponible en http://127.0.0.1:8000.
-
-### Uso de la API
-
-Para geocodificar una dirección, realice una solicitud GET a /geocodificar/ con el parámetro de dirección. Por ejemplo:
-
-```
-http://127.0.0.1:8000/geocodificar/?direccion=Tu+Direccion
+## Tests
+```bash
+cd geocoder_api
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt
+pytest
 ```
 
-O en su defecto ir a la ruta http://127.0.0.1:8000/docs en donde fastAPI dispone una documentación interactiva hecha con swagger. 
+## Notas GIS
+- Normaliza direcciones a mayúsculas y espacios simples para coincidencia determinística.
+- La BD se autogenera con el CSV semilla (`geocoder_api/db_xample.csv`), pero puedes reemplazarlo/crear tu propia BD apuntando `DB_PATH` a otra ruta y precargando tus datos.

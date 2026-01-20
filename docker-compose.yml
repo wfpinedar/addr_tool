@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  geocoder_api:
+    build:
+      context: ./geocoder_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_PATH=/app/geocoder_api/data/geocoding.db

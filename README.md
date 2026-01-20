@@ -1,20 +1,36 @@
-# Sistema de Geocodificación propuesta básica
+# addr_tool — herramientas de geocodificación y limpieza de direcciones
 
-## Descripción
-Este proyecto desarrolla un sistema de geocodificación simple para una empresa en Colombia. El sistema procesa y estandariza direcciones, convirtiéndolas en coordenadas geográficas, optimizando así las operaciones logísticas de la empresa.
+Repo con utilidades GIS: una API de geocodificación rápida (FastAPI + SQLite) y un módulo de limpieza/estandarización de direcciones con modelo ML ligero.
 
-## Funcionalidades Clave
-- Limpieza y normalización de direcciones a partir de una base de datos extensa.
-- Uso de algoritmos de aprendizaje automático para mejorar la precisión de las correcciones.
-- Integración de servicios de geocodificación externos para validación y precisión mejorada.
-- Implementación de una interfaz de usuario sencilla para la entrada y validación de direcciones.
+## Ejecutar la API en 1 comando
+```bash
+docker compose up --build
+```
+- API: http://localhost:8000
+- Docs OpenAPI: http://localhost:8000/docs
 
-## Tecnologías Utilizadas
-- Python para el backend y procesamiento de datos.
-- FastAPI para la creación de una API robusta y eficiente.
-- SQLite para la gestión de bases de datos.
-- Herramientas de machine learning para la clasificación y corrección de textos.
+### Ejemplo cURL
+```bash
+curl "http://localhost:8000/geocode?direccion=KM%207%20AUTOPISTA%20FLORIDABLANCA"
+```
+Respuesta:
+```json
+{
+  "direccion": "KM 7 AUTOPISTA FLORIDABLANCA",
+  "latitud": 7.08524,
+  "longitud": -73.10344
+}
+```
 
-## Instalación y Ejecución
-Instrucciones detalladas para la instalación de dependencias, configuración de la base de datos y ejecución de la API se encuentran al interior de cada paquete individual en sus respectivos README.
+## Estructura
+- `geocoder_api/`: API FastAPI con BD SQLite semilla (`db_xample.csv`) y tests (`pytest`).
+- `addr_cleaner/`: módulo GUI/CLI para estandarizar direcciones con un modelo entrenado (`modelo_direccion.joblib`).
+- `addr_model/`: (placeholder) espacio para experimentos de modelado adicional.
 
+Cada carpeta tiene su README para instalación detallada. El `docker-compose.yml` levanta la API geocodificadora directamente.
+
+## Stack destacado
+- GIS/geocoding: normalización de direcciones y lookup determinístico en SQLite (ampliable a tu propio dataset).
+- FastAPI + Uvicorn + OpenAPI para la API.
+- Pandas para ingestión y normalización de CSV/Excel.
+- Pytest para smoke tests de la API.

@@ -1,21 +1,46 @@
-from fastapi import FastAPI, HTTPException
-import sqlite3
+from pathlib import Path
 
-app = FastAPI()
+from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel
 
-# Función para obtener coordenadas de la base de datos
-def obtener_coordenadas(direccion: str):
-    conn = sqlite3.connect('.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT latitud, longitud FROM geocoding WHERE direccion = ?", (direccion,))
-    resultado = cursor.fetchone()
-    conn.close()
-    return resultado
+from geocoder_api.db import DEFAULT_DB_PATH, ensure_db, fetch_coordinates
 
-@app.get("/geocodificar/")
-async def geocodificar(direccion: str):
-    coordenadas = obtener_coordenadas(direccion)
-    if coordenadas:
-        return {"latitud": coordenadas[0], "longitud": coordenadas[1]}
-    else:
-        raise HTTPException(status_code=404, detail="Dirección no encontrada")
+
+class GeocodeResult(BaseModel):
+    direccion: str
+    latitud: float
+    longitud: float
+
+
+app = FastAPI(
+    title="Addr Tool Geocoder API",
+    description=(
+        "Servicio rapido para geocodificar direcciones colombianas "
+        "a partir de un dataset semilla local (extensible con tu propia BD)."
+    ),
+    version="0.2.0",
+)
+
+
+@app.on_event("startup")
+def _startup():
+    ensure_db(DEFAULT_DB_PATH)
+
+
+@app.get("/health", tags=["meta"])
+def health():
+    return {"status": "ok", "db_path": str(Path(DEFAULT_DB_PATH).resolve())}
+
+
+@app.get(
+    "/geocode",
+    response_model=GeocodeResult,
+    tags=["geocoding"],
+    summary="Geocodifica una direccion",
+)
+def geocode(direccion: str = Query(..., description="Direccion libre a buscar")):
+    row = fetch_coordinates(direccion, DEFAULT_DB_PATH)
+    if not row:
+        raise HTTPException(status_code=404, detail="Direccion no encontrada")
+    direccion_db, lat, lon = row
+    return GeocodeResult(direccion=direccion_db, latitud=lat, longitud=lon)
